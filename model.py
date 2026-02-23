@@ -564,3 +564,4 @@ def update_user_active(user_id: int, is_active: int):
     )
     conn.commit()
     conn.close()
+    conn.close()

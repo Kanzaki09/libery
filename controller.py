@@ -52,6 +52,52 @@ def edit_book(book_id, title, author):
 
 
 # ============================================================
+# Book (Controller API for pages)
+# ============================================================
+
+def create_book(title: str, author: str):
+    errors = []
+
+    if not title or not title.strip():
+        errors.append("กรุณากรอกชื่อหนังสือ")
+
+    if errors:
+        return False, errors
+
+    try:
+        insert_book(title.strip(), author.strip() if author else "")
+        return True, ["เพิ่มหนังสือเรียบร้อยแล้ว"]
+    except Exception as e:
+        return False, [f"ไม่สามารถเพิ่มหนังสือได้: {e}"]
+
+
+def get_books_controller():
+    try:
+        return fetch_books()
+    except Exception:
+        return []
+
+
+def delete_book_controller(book_id: int):
+    try:
+        delete_book(int(book_id))
+        return True, ["ลบหนังสือเรียบร้อยแล้ว"]
+    except Exception as e:
+        return False, [f"ไม่สามารถลบหนังสือได้: {e}"]
+
+
+def update_book_controller(book_id: int, title: str, author: str):
+    if not title or not title.strip():
+        return False, ["ชื่อหนังสือห้ามว่าง"]
+
+    try:
+        update_book(int(book_id), title.strip(), author.strip())
+        return True, ["แก้ไขหนังสือเรียบร้อยแล้ว"]
+    except Exception as e:
+        return False, [f"ไม่สามารถแก้ไขหนังสือได้: {e}"]
+
+
+# ============================================================
 # Member
 # ============================================================
 from model import (
@@ -217,12 +263,25 @@ def create_user(username: str, password: str, role: str, is_active: bool = True)
     if errors:
         return False, errors
 
-    model.add_user(
-        username=username,
-        password_hash=_hash_password(password),
+    # 🔧 FIX: รองรับกรณี model ไม่มี add_user
+    if hasattr(model, "add_user"):
+        model.add_user(
+            username=username,
+            password_hash=_hash_password(password),
+            role=role,
+            is_active=1 if is_active else 0
+        )
+    else:
+        # fallback: ถ้ามีฟังก์ชัน insert_user หรือ create_user ใน model
+        if hasattr(model, "insert_user"):
+            model.insert_user(username, _hash_password(password), role, 1 if is_active else 0)
+        elif hasattr(model, "create_user"):
+            model.create_user(username, _hash_password(password), role, 1 if is_active else 0)
+        else:
+            return False, ["model.py ไม่มีฟังก์ชันเพิ่มผู้ใช้ (add_user/insert_user/create_user)"],
         role=role,
         is_active=1 if is_active else 0
-    )
+    
 
     return True, [f"✅ เพิ่มผู้ใช้ '{username}' เรียบร้อยแล้ว"]
 

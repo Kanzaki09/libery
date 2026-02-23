@@ -1,6 +1,5 @@
 import streamlit as st
 import model   # ✅ ใช้ model.py ของโปรเจกต์เรา
-st.write("MODEL FILE:", model.__file__)
 from pages import book_page, member_page, borrow_page, login_page, admin_page, report_page
 
 # =========================
